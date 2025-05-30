@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sudoku Puzzle Generator</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+    background: #f5f5f5;
+    text-align: center;
+  }
+  h1 {
+    margin-bottom: 20px;
+  }
+  #sudoku {
+    display: grid;
+    grid-template-columns: repeat(9, 40px);
+    grid-template-rows: repeat(9, 40px);
+    gap: 2px;
+    justify-content: center;
+    margin: 20px auto;
+    width: fit-content;
+    background: #222;
+    border: 3px solid #222;
+  }
+  input {
+    width: 38px;
+    height: 38px;
+    text-align: center;
+    font-size: 18px;
+    border: 1px solid #aaa;
+    outline: none;
+    background-color: white;
+  }
+  input:disabled {
+    background-color: #ddd;
+    font-weight: bold;
+  }
+  /* Thicker borders for 3x3 boxes */
+  input:nth-child(3n) {
+    border-right: 3px solid #222;
+  }
+  input:nth-child(n + 19):nth-child(-n + 27),
+  input:nth-child(n + 46):nth-child(-n + 54) {
+    border-bottom: 3px solid #222;
+  }
+</style>
+</head>
+<body>
+
+<h1>Sudoku Puzzle Generator</h1>
+<div id="sudoku"></div>
+<button onclick="generatePuzzle()">Generate New Puzzle</button>
+
+<script>
+  // Helper to create empty board
+  function createEmptyBoard() {
+    const board = [];
+    for (let i = 0; i < 9; i++) {
+      board.push(new Array(9).fill(0));
+    }
+    return board;
+  }
+
+  // Check if number can be placed at row,col
+  function canPlace(board, row, col, num) {
+    // Check row and col
+    for (let i = 0; i < 9; i++) {
+      if (board[row][i] === num || board[i][col] === num) {
+        return false;
+      }
+    }
+    // Check 3x3 grid
+    const startRow = Math.floor(row / 3) * 3;
+    const startCol = Math.floor(col / 3) * 3;
+    for (let r = startRow; r < startRow + 3; r++) {
+      for (let c = startCol; c < startCol + 3; c++) {
+        if (board[r][c] === num) return false;
+      }
+    }
+    return true;
+  }
+
+  // Backtracking solver to fill board completely
+  function solveSudoku(board) {
+    for (let row = 0; row < 9; row++) {
+      for (let col = 0; col < 9; col++) {
+        if (board[row][col] === 0) {
+          for (let num = 1; num <= 9; num++) {
+            if (canPlace(board, row, col, num)) {
+              board[row][col] = num;
+              if (solveSudoku(board)) return true;
+              board[row][col] = 0;
+            }
+          }
+          return false;
+        }
+      }
+    }
+    return true; // Solved
+  }
+
+  // Remove some numbers to create a puzzle
+  function removeNumbers(board, clues = 30) {
+    // clues = how many numbers remain (minimum ~17 for a valid puzzle)
+    let attempts = 81 - clues;
+    while (attempts > 0) {
+      const row = Math.floor(Math.random() * 9);
+      const col = Math.floor(Math.random() * 9);
+      if (board[row][col] !== 0) {
+        board[row][col] = 0;
+        attempts--;
+      }
+    }
+  }
+
+  function generatePuzzle() {
+    let board = createEmptyBoard();
+    solveSudoku(board);
+    removeNumbers(board, 30); // 30 clues
+    
+    // Clear previous grid
+    const container = document.getElementById("sudoku");
+    container.innerHTML = "";
+
+    for (let row = 0; row < 9; row++) {
+      for (let col = 0; col < 9; col++) {
+        const input = document.createElement("input");
+        input.setAttribute("maxlength", "1");
+        input.setAttribute("type", "text");
+        input.setAttribute("inputmode", "numeric");
+        input.setAttribute("pattern", "[1-9]");
+        if (board[row][col] !== 0) {
+          input.value = board[row][col];
+          input.disabled = true;
+        }
+        container.appendChild(input);
+      }
+    }
+  }
+
+  // Generate puzzle on page load
+  generatePuzzle();
+</script>
+
+</body>
+</html>
